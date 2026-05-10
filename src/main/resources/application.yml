@@ -1,0 +1,34 @@
+server:
+  port: 8081
+spring:
+  application:
+    name: ${spring.application.name}  # 服务名，网关路由时使用
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 11MB
+
+    # 文件微服务的http接口不走网关，客户端直接访问
+#  cloud:
+#    nacos:
+#      discovery:
+#        server-addr: localhost:8848  # Nacos地址
+#        service: ${spring.application.name}-http  # 注册为HTTP服务，网关路由时使用
+
+jwt:
+  public-key-path: 'F:\GraduationProject\backend\file-server\config\public.pem'
+
+dubbo:
+  application:
+    name: ${spring.application.name}
+  registry:
+    address: nacos://localhost:8848
+  protocol:
+    name: dubbo
+    port: -1
+  scan:
+    base-packages: com.liuyi.file  # ❗缺少这个配置
+
+file:
+  storage:
+    path: 'F:\GraduationProject\backend\data\file'

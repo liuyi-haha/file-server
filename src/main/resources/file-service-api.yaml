@@ -1,0 +1,108 @@
+openapi: 3.0.0
+info:
+  title: 文件微服务提供的API接口文档
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8081/api/file-server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 网关验证Token后会在Header中注入 X-User-Id
+
+  parameters:
+    XUserId:
+      name: X-User-Id
+      in: header
+      required: true
+      schema:
+        type: string
+      description: 网关从Token解析后注入的用户ID（客户端无需传递）
+
+paths:
+  # ==================== 下载文件 ==================== #这里就简单点，不控制文件访问权限了，拿到文件ID就能下载，实际使用中可以增加权限控制
+  /files/{fileId}:
+    get:
+      operationId: downloadFile
+      description: 根据文件ID下载文件（需要认证）
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 文件ID
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+
+  # ==================== 上传文件 ====================
+  /files/upload:
+    post:
+      operationId: uploadFile
+      description: 上传文件（需要携带上传凭证）。无需用户认证Token，使用申请到的上传凭证进行身份验证
+      security: [ ]  # 不使用 BearerAuth，改用自定义凭证
+      parameters:
+        - name: X-Upload-Token
+          in: header
+          required: true
+          schema:
+            type: string
+          description: 上传文件凭证（从聊天微服务申请获得）
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: 要上传的文件内容
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                properties:
+                  success:
+                    type: boolean
+                    description: 是否成功
+                  data:
+                    type: object
+                    required:
+                      - fileId
+                    properties:
+                      fileId:
+                        type: string
+                        description: 文件ID，用于后续下载或引用
+                  errCode:
+                    type: string
+                    description: 错误码
+                    enum:
+                      - "INVALID_UPLOAD_TOKEN"
+                      - "UPLOAD_TOKEN_EXPIRED"
+                      - "FILE_TOO_LARGE"
+                      - "UNSUPPORTED_FILE_TYPE"
+                      - "UPLOAD_FAILED"
+                      - "UNKNOWN_ERROR"
+                  errMsg:
+                    type: string
+                    description: 错误信息
